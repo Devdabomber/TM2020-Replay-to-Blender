@@ -1,0 +1,40 @@
+import bpy
+import pathlib
+import csv
+import mathutils
+import math
+
+file_loc = pathlib.Path(__file__).parent.resolve()
+folder = pathlib.Path(file_loc).parent.resolve()
+parent_folder = pathlib.Path(__file__).parents[3]
+
+
+data = pathlib.Path(folder).joinpath('csvnamehere.csv') #Place .csv next to .blend
+
+
+object = bpy.context.active_object
+
+
+context = bpy.context #Clear previous animation data
+for ob in context.selected_objects:
+    ob.animation_data_clear()
+
+
+with open(data, 'r') as csvfile:
+    datareader = csv.reader(csvfile)
+    next(datareader) #Don't read the headers
+    i = 0
+    for row in datareader:
+        i+=1
+        loc = (float(row[3]), float(row[1]), float(row[2]))
+        rot_matrix = mathutils.Matrix([[-float(row[9]), float(row[8]), float(row[7])], [float(row[6]), float(row[5]), float(row[4])], [float(row[12]), float(row[11]), -float(row[10])]])
+        rot_matrix = rot_matrix @ mathutils.Matrix.Rotation(math.radians(-90), 3, 'X')
+        rot_matrix = rot_matrix @ mathutils.Matrix.Rotation(math.radians(180), 3, 'Y')
+        rot_euler = rot_matrix.to_euler("ZYX")
+
+
+        print(i, loc, rot_euler)
+        object.location = loc
+        object.rotation_euler = rot_euler
+        object.keyframe_insert(data_path="location", frame=i)
+        object.keyframe_insert(data_path="rotation_euler", frame=i)
